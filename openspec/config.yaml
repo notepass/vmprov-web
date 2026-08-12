@@ -1,5 +1,13 @@
 schema: spec-driven
 
+context: |
+  Tech stack: Go 1.21+, Echo web framework, slog (stdlib logging), viper for config, testify for tests
+  Config: YAML file + env vars (SERVER_PORT, DB_CONN_STRING, DB_USERNAME, DB_PASSWORD, LOG_LEVEL)
+  Project layout: standard Go (cmd/server/, internal/)
+  Module path: github.com/notepass/vmprov-web
+  Build: Go modules + Makefile (build, run, test targets)
+  Domain: VM cloud-init provisioning via libvirt
+
 # Project context (optional)
 # This is shown to AI when creating artifacts.
 # Add your tech stack, conventions, style guides, domain knowledge, etc.
