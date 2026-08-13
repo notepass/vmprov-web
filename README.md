@@ -38,6 +38,21 @@ All fields can be overridden via environment variables:
 
 Default values: port `8080`, log level `INFO`.
 
+## Testing
+
+The integration tests require a running PostgreSQL and MariaDB instance. By default the tests expect:
+
+| Database | Host | Port | User | Password | Database |
+|---|---|---|---|---|---|
+| PostgreSQL | `localhost` | `5432` | `postgres` | `password` | `postgres` |
+| MariaDB | `localhost` | `3306` | `root` | `password` | `testdb` |
+
+The `testdb` database will be created automatically if it does not exist. To skip integration tests, run:
+
+```bash
+go test -short ./...
+```
+
 ## Project Structure
 
 ```

@@ -28,7 +28,9 @@ func New(cfg *config.Config, logger *slog.Logger) *http.Server {
 }
 
 // Start runs the server with graceful shutdown handling.
-func Start(srv *http.Server, addr string) error {
+// onShutdown is called after the HTTP server has been shut down,
+// allowing cleanup of resources like database connections.
+func Start(srv *http.Server, addr string, onShutdown func()) error {
 	srv.Addr = addr
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -47,6 +49,10 @@ func Start(srv *http.Server, addr string) error {
 
 	if err := srv.Shutdown(ctx); err != nil {
 		return err
+	}
+
+	if onShutdown != nil {
+		onShutdown()
 	}
 
 	slog.Info("server stopped")

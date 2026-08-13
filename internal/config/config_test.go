@@ -14,6 +14,9 @@ func TestLoad_Defaults(t *testing.T) {
 
 	assert.Equal(t, DefaultPort, cfg.ServerPort)
 	assert.Equal(t, DefaultLogLevel, cfg.LogLevel)
+	assert.Equal(t, DefaultMaxOpenConns, cfg.DBMaxOpenConns)
+	assert.Equal(t, DefaultMaxIdleConns, cfg.DBMaxIdleConns)
+	assert.Equal(t, DefaultConnMaxLifetime, cfg.DBConnMaxLifetime)
 	assert.Empty(t, cfg.DBConnString)
 	assert.Empty(t, cfg.DBUsername)
 	assert.Empty(t, cfg.DBPassword)
@@ -25,12 +28,18 @@ func TestLoad_EnvOverride(t *testing.T) {
 	t.Setenv("DB_CONN_STRING", "postgres://localhost/testdb")
 	t.Setenv("DB_USERNAME", "testuser")
 	t.Setenv("DB_PASSWORD", "testpass")
+	t.Setenv("DB_MAX_OPEN_CONNS", "25")
+	t.Setenv("DB_MAX_IDLE_CONNS", "10")
+	t.Setenv("DB_CONN_MAX_LIFETIME", "300")
 
 	cfg, err := Load()
 	require.NoError(t, err)
 
 	assert.Equal(t, 3000, cfg.ServerPort)
 	assert.Equal(t, "DEBUG", cfg.LogLevel)
+	assert.Equal(t, 25, cfg.DBMaxOpenConns)
+	assert.Equal(t, 10, cfg.DBMaxIdleConns)
+	assert.Equal(t, 300, cfg.DBConnMaxLifetime)
 	assert.Equal(t, "postgres://localhost/testdb", cfg.DBConnString)
 	assert.Equal(t, "testuser", cfg.DBUsername)
 	assert.Equal(t, "testpass", cfg.DBPassword)
