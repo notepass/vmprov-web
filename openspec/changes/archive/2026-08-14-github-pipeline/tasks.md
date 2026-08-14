@@ -22,4 +22,4 @@
 - [x] 4.2 Add unit test job: checkout, setup Go, run `go test ./... -short`
 - [x] 4.3 Add integration test job: checkout, setup Go, start docker-compose services, wait for health, run `go test ./...`
 - [x] 4.4 Add build job: checkout, setup Go, cross-compile linux/amd64 and linux/arm64, upload artifacts
-- [ ] 4.5 Verify workflow triggers correctly via manual dispatch
+- [x] 4.5 Verify workflow triggers correctly via manual dispatch
