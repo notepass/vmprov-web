@@ -1,0 +1,6 @@
+.git
+bin
+*.md
+openspec
+.opencode
+config.yaml
