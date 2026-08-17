@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/notepass/vmprov-web/internal/domain"
@@ -9,10 +10,10 @@ import (
 
 // MockUserRepository is a thread-safe mock implementation of UserRepository.
 type MockUserRepository struct {
-	mu      sync.RWMutex
-	users   map[int]domain.User
-	nextID  int
-	byName  map[string]int
+	mu     sync.RWMutex
+	users  map[int]domain.User
+	nextID int
+	byName map[string]int
 }
 
 // NewMockUserRepository creates a new mock user repository.
@@ -138,6 +139,92 @@ func (m *MockTemplateRepository) List(_ context.Context) ([]domain.Template, err
 		templates = append(templates, t)
 	}
 	return templates, nil
+}
+
+// MockLibvirtConnectionRepository is a thread-safe mock implementation of LibvirtConnectionRepository.
+type MockLibvirtConnectionRepository struct {
+	mu     sync.RWMutex
+	conns  map[int]domain.LibvirtConnection
+	nextID int
+	byName map[string]int
+}
+
+// NewMockLibvirtConnectionRepository creates a new mock libvirt connection repository.
+func NewMockLibvirtConnectionRepository() *MockLibvirtConnectionRepository {
+	return &MockLibvirtConnectionRepository{
+		conns:  make(map[int]domain.LibvirtConnection),
+		byName: make(map[string]int),
+	}
+}
+
+func (m *MockLibvirtConnectionRepository) Create(_ context.Context, conn domain.LibvirtConnection) (int, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.byName[conn.Name]; ok {
+		return 0, fmt.Errorf("libvirt connection %q already exists", conn.Name)
+	}
+	m.nextID++
+	id := m.nextID
+	conn.ID = id
+	m.conns[id] = conn
+	m.byName[conn.Name] = id
+	return id, nil
+}
+
+func (m *MockLibvirtConnectionRepository) GetByID(_ context.Context, id int) (*domain.LibvirtConnection, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	c, ok := m.conns[id]
+	if !ok {
+		return nil, nil
+	}
+	return &c, nil
+}
+
+func (m *MockLibvirtConnectionRepository) GetByName(_ context.Context, name string) (*domain.LibvirtConnection, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	id, ok := m.byName[name]
+	if !ok {
+		return nil, nil
+	}
+	c := m.conns[id]
+	return &c, nil
+}
+
+func (m *MockLibvirtConnectionRepository) Update(_ context.Context, conn domain.LibvirtConnection) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if _, ok := m.conns[conn.ID]; !ok {
+		return nil
+	}
+	oldName := m.conns[conn.ID].Name
+	if oldName != conn.Name {
+		delete(m.byName, oldName)
+	}
+	m.conns[conn.ID] = conn
+	m.byName[conn.Name] = conn.ID
+	return nil
+}
+
+func (m *MockLibvirtConnectionRepository) Delete(_ context.Context, id int) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if c, ok := m.conns[id]; ok {
+		delete(m.byName, c.Name)
+		delete(m.conns, id)
+	}
+	return nil
+}
+
+func (m *MockLibvirtConnectionRepository) List(_ context.Context) ([]domain.LibvirtConnection, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	conns := make([]domain.LibvirtConnection, 0, len(m.conns))
+	for _, c := range m.conns {
+		conns = append(conns, c)
+	}
+	return conns, nil
 }
 
 // MockAuditLogRepository is a thread-safe mock implementation of AuditLogRepository.

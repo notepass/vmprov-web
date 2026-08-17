@@ -30,3 +30,13 @@ type AuditLogRepository interface {
 	List(ctx context.Context, limit, offset int) ([]domain.AuditLog, error)
 	GetByUserID(ctx context.Context, userID int, limit, offset int) ([]domain.AuditLog, error)
 }
+
+// LibvirtConnectionRepository defines the interface for libvirt connection data access.
+type LibvirtConnectionRepository interface {
+	Create(ctx context.Context, conn domain.LibvirtConnection) (int, error)
+	GetByID(ctx context.Context, id int) (*domain.LibvirtConnection, error)
+	GetByName(ctx context.Context, name string) (*domain.LibvirtConnection, error)
+	Update(ctx context.Context, conn domain.LibvirtConnection) error
+	Delete(ctx context.Context, id int) error
+	List(ctx context.Context) ([]domain.LibvirtConnection, error)
+}

@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,6 +18,12 @@ func TestLoad_Defaults(t *testing.T) {
 	assert.Equal(t, DefaultMaxOpenConns, cfg.DBMaxOpenConns)
 	assert.Equal(t, DefaultMaxIdleConns, cfg.DBMaxIdleConns)
 	assert.Equal(t, DefaultConnMaxLifetime, cfg.DBConnMaxLifetime)
+	assert.Equal(t, DefaultLibvirtConnectTimeout, cfg.LibvirtConnectTimeout)
+
+	home, err := os.UserHomeDir()
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(home, ".ssh", "known_hosts"), cfg.LibvirtKnownHostsFile)
+
 	assert.Empty(t, cfg.DBConnString)
 	assert.Empty(t, cfg.DBUsername)
 	assert.Empty(t, cfg.DBPassword)
@@ -31,6 +38,8 @@ func TestLoad_EnvOverride(t *testing.T) {
 	t.Setenv("DB_MAX_OPEN_CONNS", "25")
 	t.Setenv("DB_MAX_IDLE_CONNS", "10")
 	t.Setenv("DB_CONN_MAX_LIFETIME", "300")
+	t.Setenv("LIBVIRT_CONNECT_TIMEOUT", "30")
+	t.Setenv("LIBVIRT_KNOWN_HOSTS_FILE", "/etc/vmprov/known_hosts")
 
 	cfg, err := Load()
 	require.NoError(t, err)
@@ -40,6 +49,8 @@ func TestLoad_EnvOverride(t *testing.T) {
 	assert.Equal(t, 25, cfg.DBMaxOpenConns)
 	assert.Equal(t, 10, cfg.DBMaxIdleConns)
 	assert.Equal(t, 300, cfg.DBConnMaxLifetime)
+	assert.Equal(t, 30, cfg.LibvirtConnectTimeout)
+	assert.Equal(t, "/etc/vmprov/known_hosts", cfg.LibvirtKnownHostsFile)
 	assert.Equal(t, "postgres://localhost/testdb", cfg.DBConnString)
 	assert.Equal(t, "testuser", cfg.DBUsername)
 	assert.Equal(t, "testpass", cfg.DBPassword)

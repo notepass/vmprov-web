@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/viper"
 )
@@ -12,8 +13,19 @@ const (
 	DefaultMaxOpenConns = 25
 	DefaultMaxIdleConns = 5
 	// 0 means no limit
-	DefaultConnMaxLifetime = 0
+	DefaultConnMaxLifetime       = 0
+	DefaultLibvirtConnectTimeout = 10
 )
+
+// defaultKnownHostsFile returns the default libvirt known hosts file path,
+// resolved from the home directory of the user running the server.
+func defaultKnownHostsFile() string {
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		return "~/.ssh/known_hosts"
+	}
+	return filepath.Join(home, ".ssh", "known_hosts")
+}
 
 // Load reads configuration from config.yaml and environment variables.
 func Load() (*Config, error) {
@@ -26,6 +38,8 @@ func Load() (*Config, error) {
 	viper.SetDefault("db_max_open_conns", DefaultMaxOpenConns)
 	viper.SetDefault("db_max_idle_conns", DefaultMaxIdleConns)
 	viper.SetDefault("db_conn_max_lifetime", DefaultConnMaxLifetime)
+	viper.SetDefault("libvirt_connect_timeout", DefaultLibvirtConnectTimeout)
+	viper.SetDefault("libvirt_known_hosts_file", defaultKnownHostsFile())
 
 	viper.BindEnv("server_port", "SERVER_PORT")
 	viper.BindEnv("db_conn_string", "DB_CONN_STRING")
@@ -35,6 +49,8 @@ func Load() (*Config, error) {
 	viper.BindEnv("db_max_idle_conns", "DB_MAX_IDLE_CONNS")
 	viper.BindEnv("db_conn_max_lifetime", "DB_CONN_MAX_LIFETIME")
 	viper.BindEnv("log_level", "LOG_LEVEL")
+	viper.BindEnv("libvirt_connect_timeout", "LIBVIRT_CONNECT_TIMEOUT")
+	viper.BindEnv("libvirt_known_hosts_file", "LIBVIRT_KNOWN_HOSTS_FILE")
 
 	if _, err := os.Stat("config.yaml"); err == nil {
 		if err := viper.ReadInConfig(); err != nil {
@@ -43,13 +59,15 @@ func Load() (*Config, error) {
 	}
 
 	return &Config{
-		ServerPort:        viper.GetInt("server_port"),
-		DBConnString:      viper.GetString("db_conn_string"),
-		DBUsername:        viper.GetString("db_username"),
-		DBPassword:        viper.GetString("db_password"),
-		DBMaxOpenConns:    viper.GetInt("db_max_open_conns"),
-		DBMaxIdleConns:    viper.GetInt("db_max_idle_conns"),
-		DBConnMaxLifetime: viper.GetInt("db_conn_max_lifetime"),
-		LogLevel:          viper.GetString("log_level"),
+		ServerPort:            viper.GetInt("server_port"),
+		DBConnString:          viper.GetString("db_conn_string"),
+		DBUsername:            viper.GetString("db_username"),
+		DBPassword:            viper.GetString("db_password"),
+		DBMaxOpenConns:        viper.GetInt("db_max_open_conns"),
+		DBMaxIdleConns:        viper.GetInt("db_max_idle_conns"),
+		DBConnMaxLifetime:     viper.GetInt("db_conn_max_lifetime"),
+		LogLevel:              viper.GetString("log_level"),
+		LibvirtConnectTimeout: viper.GetInt("libvirt_connect_timeout"),
+		LibvirtKnownHostsFile: viper.GetString("libvirt_known_hosts_file"),
 	}, nil
 }

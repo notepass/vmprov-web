@@ -4,9 +4,14 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
+	"strings"
+	"time"
 
+	"github.com/notepass/vmprov-web/internal/api"
 	"github.com/notepass/vmprov-web/internal/config"
 	"github.com/notepass/vmprov-web/internal/db"
+	"github.com/notepass/vmprov-web/internal/libvirt"
 	"github.com/notepass/vmprov-web/internal/logger"
 	"github.com/notepass/vmprov-web/internal/repository"
 	"github.com/notepass/vmprov-web/internal/server"
@@ -59,10 +64,27 @@ func main() {
 	userRepo := repository.NewUserRepo(adaptor.DB(), dialect, log)
 	templateRepo := repository.NewTemplateRepo(adaptor.DB(), dialect, log)
 	auditLogRepo := repository.NewAuditLogRepo(adaptor.DB(), dialect, log)
+	connRepo := repository.NewLibvirtConnectionRepo(adaptor.DB(), dialect, log)
+
+	// Ensure the libvirt known_hosts file exists.
+	knownHostsFile := expandHome(cfg.LibvirtKnownHostsFile)
+	if err := ensureKnownHostsFile(knownHostsFile); err != nil {
+		log.Error("failed to ensure known_hosts file", "path", knownHostsFile, "error", err)
+		adaptor.Close()
+		os.Exit(1)
+	}
+
+	connHandler := api.NewLibvirtConnectionHandler(
+		connRepo,
+		libvirt.New(),
+		time.Duration(cfg.LibvirtConnectTimeout)*time.Second,
+		knownHostsFile,
+		log,
+	)
 
 	log.Info("starting server", "port", cfg.ServerPort)
 
-	srv := server.New(cfg, log)
+	srv := server.New(cfg, log, connHandler)
 	addr := fmt.Sprintf(":%d", cfg.ServerPort)
 
 	if err := server.Start(srv, addr, func() {
@@ -80,4 +102,33 @@ func main() {
 	_ = userRepo
 	_ = templateRepo
 	_ = auditLogRepo
+}
+
+// expandHome replaces a leading ~/ with the user's home directory.
+func expandHome(path string) string {
+	if path == "~" || strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err != nil || home == "" {
+			return path
+		}
+		return filepath.Join(home, strings.TrimPrefix(path, "~"))
+	}
+	return path
+}
+
+// ensureKnownHostsFile creates the known_hosts file and its parent
+// directory if they do not exist.
+func ensureKnownHostsFile(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(path, os.O_RDONLY, 0)
+	if err == nil {
+		f.Close()
+		return nil
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+	return os.WriteFile(path, nil, 0o600)
 }

@@ -76,6 +76,141 @@ func TestMockTemplateRepository_CRUD(t *testing.T) {
 	assert.Nil(t, tmpl)
 }
 
+func TestMockLibvirtConnectionRepository_CRUD(t *testing.T) {
+	repo := NewMockLibvirtConnectionRepository()
+
+	host := "192.168.1.10"
+	username := "libvirt"
+	keyPath := "/etc/vmprov/keys/host10"
+	id, err := repo.Create(context.Background(), domain.LibvirtConnection{
+		Name:                 "host-10",
+		Type:                 "ssh",
+		Host:                 &host,
+		Username:             &username,
+		SSHKeyPath:           &keyPath,
+		AcceptUnknownHostKey: true,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 1, id)
+
+	conn, err := repo.GetByID(context.Background(), id)
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+	assert.Equal(t, "host-10", conn.Name)
+	assert.Equal(t, "ssh", conn.Type)
+	require.NotNil(t, conn.Host)
+	assert.Equal(t, "192.168.1.10", *conn.Host)
+	assert.True(t, conn.AcceptUnknownHostKey)
+	assert.Nil(t, conn.SocketPath)
+
+	socketPath := "/var/run/libvirt/libvirt-sock"
+	id, err = repo.Create(context.Background(), domain.LibvirtConnection{
+		Name:       "local",
+		Type:       "socket",
+		SocketPath: &socketPath,
+	})
+	require.NoError(t, err)
+	assert.Equal(t, 2, id)
+
+	conn, err = repo.GetByID(context.Background(), id)
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+	assert.Equal(t, "socket", conn.Type)
+	require.NotNil(t, conn.SocketPath)
+	assert.Equal(t, "/var/run/libvirt/libvirt-sock", *conn.SocketPath)
+	assert.Nil(t, conn.Host)
+
+	conns, err := repo.List(context.Background())
+	require.NoError(t, err)
+	assert.Len(t, conns, 2)
+
+	err = repo.Delete(context.Background(), id)
+	require.NoError(t, err)
+
+	conn, err = repo.GetByID(context.Background(), id)
+	require.NoError(t, err)
+	assert.Nil(t, conn)
+
+	conns, err = repo.List(context.Background())
+	require.NoError(t, err)
+	assert.Len(t, conns, 1)
+}
+
+func TestMockLibvirtConnectionRepository_Update(t *testing.T) {
+	repo := NewMockLibvirtConnectionRepository()
+
+	host := "192.168.1.10"
+	username := "libvirt"
+	keyPath := "/etc/vmprov/keys/host10"
+	id, err := repo.Create(context.Background(), domain.LibvirtConnection{
+		Name:       "host-10",
+		Type:       "ssh",
+		Host:       &host,
+		Username:   &username,
+		SSHKeyPath: &keyPath,
+	})
+	require.NoError(t, err)
+
+	newHost := "192.168.1.11"
+	newName := "host-11"
+	err = repo.Update(context.Background(), domain.LibvirtConnection{
+		ID:         id,
+		Name:       newName,
+		Type:       "ssh",
+		Host:       &newHost,
+		Username:   &username,
+		SSHKeyPath: &keyPath,
+	})
+	require.NoError(t, err)
+
+	conn, err := repo.GetByID(context.Background(), id)
+	require.NoError(t, err)
+	require.NotNil(t, conn)
+	assert.Equal(t, "host-11", conn.Name)
+	require.NotNil(t, conn.Host)
+	assert.Equal(t, "192.168.1.11", *conn.Host)
+
+	byName, err := repo.GetByName(context.Background(), "host-11")
+	require.NoError(t, err)
+	require.NotNil(t, byName)
+	assert.Equal(t, id, byName.ID)
+
+	byOldName, err := repo.GetByName(context.Background(), "host-10")
+	require.NoError(t, err)
+	assert.Nil(t, byOldName)
+}
+
+func TestMockLibvirtConnectionRepository_DuplicateName(t *testing.T) {
+	repo := NewMockLibvirtConnectionRepository()
+
+	host := "192.168.1.10"
+	_, err := repo.Create(context.Background(), domain.LibvirtConnection{
+		Name: "host-10",
+		Type: "ssh",
+		Host: &host,
+	})
+	require.NoError(t, err)
+
+	_, err = repo.Create(context.Background(), domain.LibvirtConnection{
+		Name: "host-10",
+		Type: "ssh",
+		Host: &host,
+	})
+	require.Error(t, err)
+}
+
+func TestMockLibvirtConnectionRepository_NotFound(t *testing.T) {
+	repo := NewMockLibvirtConnectionRepository()
+
+	conn, err := repo.GetByID(context.Background(), 999)
+	require.NoError(t, err)
+	assert.Nil(t, conn)
+
+	conn, err = repo.GetByName(context.Background(), "missing")
+	require.NoError(t, err)
+	assert.Nil(t, conn)
+}
+
 func TestMockAuditLogRepository_CreateAndList(t *testing.T) {
 	repo := NewMockAuditLogRepository()
 

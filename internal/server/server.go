@@ -14,8 +14,14 @@ import (
 	"github.com/notepass/vmprov-web/internal/config"
 )
 
+// RouteRegistrar registers API routes on the Echo instance.
+type RouteRegistrar interface {
+	RegisterRoutes(e *echo.Echo)
+}
+
 // New creates a new HTTP server using Echo.
-func New(cfg *config.Config, logger *slog.Logger) *http.Server {
+// Handlers implementing RouteRegistrar are registered in the given order.
+func New(cfg *config.Config, logger *slog.Logger, registrars ...RouteRegistrar) *http.Server {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
@@ -23,6 +29,10 @@ func New(cfg *config.Config, logger *slog.Logger) *http.Server {
 	srv := e.Server
 	srv.ReadTimeout = 15 * time.Second
 	srv.WriteTimeout = 15 * time.Second
+
+	for _, r := range registrars {
+		r.RegisterRoutes(e)
+	}
 
 	return srv
 }

@@ -27,3 +27,20 @@ type AuditLog struct {
 	Details   *string   `db:"details"`
 	CreatedAt time.Time `db:"created_at"`
 }
+
+// LibvirtConnection represents a configured libvirt endpoint.
+type LibvirtConnection struct {
+	ID                   int        `db:"id"`
+	Name                 string     `db:"name"`
+	Type                 string     `db:"type"`
+	Host                 *string    `db:"host"`
+	Username             *string    `db:"username"`
+	SSHKeyPath           *string    `db:"ssh_key_path"`
+	AcceptUnknownHostKey bool       `db:"accept_unknown_host_key"`
+	SocketPath           *string    `db:"socket_path"`
+	Description          *string    `db:"description"`
+	LastStatus           *string    `db:"last_status"`
+	LastCheckedAt        *time.Time `db:"last_checked_at"`
+	CreatedAt            time.Time  `db:"created_at"`
+	UpdatedAt            time.Time  `db:"updated_at"`
+}

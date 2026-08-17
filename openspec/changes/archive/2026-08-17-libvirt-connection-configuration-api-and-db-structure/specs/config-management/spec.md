@@ -1,8 +1,4 @@
-## Purpose
-
-Provide configuration management via YAML file and environment variables for all application settings.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Configuration struct
 The application SHALL define a configuration struct containing server port, DB connect string, DB username, DB password, log level, database pool configuration fields, libvirt connect timeout, and libvirt known hosts file path.
@@ -10,13 +6,6 @@ The application SHALL define a configuration struct containing server port, DB c
 #### Scenario: Config struct exists
 - **WHEN** the config package is imported
 - **THEN** a config struct is available with fields for port, DB connect string, DB username, DB password, log level, database pool settings (max open conns, max idle conns, conn max lifetime), libvirt connect timeout, and libvirt known hosts file path
-
-### Requirement: YAML config file loading
-The application SHALL load configuration from a `config.yaml` file in the project root.
-
-#### Scenario: Config loaded from file
-- **WHEN** `config.yaml` exists in the project root
-- **THEN** configuration values are loaded from the file
 
 ### Requirement: Environment variable overrides
 All config fields SHALL be overridable via environment variables: `SERVER_PORT`, `DB_CONN_STRING`, `DB_USERNAME`, `DB_PASSWORD`, `LOG_LEVEL`, `DB_MAX_OPEN_CONNS`, `DB_MAX_IDLE_CONNS`, `DB_CONN_MAX_LIFETIME`, `LIBVIRT_CONNECT_TIMEOUT`, `LIBVIRT_KNOWN_HOSTS_FILE`.
