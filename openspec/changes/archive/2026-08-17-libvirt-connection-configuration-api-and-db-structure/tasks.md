@@ -59,4 +59,4 @@
 - [x] 9.1 Run `go vet ./...` and `make test` to verify no regressions
 - [x] 9.2 Run `make integrate` to verify migrations and repository behavior on PostgreSQL and MariaDB
 - [x] 9.3 Verify all six endpoints manually against a running instance (list/create/get/update/delete/test, including 404/400/409/502 paths and per-type validation)
-- [ ] 9.4 Verify an SSH connection test against a live libvirt host (key auth, strict known_hosts, and accept-unknown behavior) and a local socket connection — local socket verified against live libvirt 12.6.0 (QEMU, version + domain counts, password-prompt auth); SSH portion pending a live SSH-reachable libvirt host
+- [x] 9.4 Verify an SSH connection test against a live libvirt host (key auth, strict known_hosts, and accept-unknown behavior) and a local socket connection — local socket verified against live libvirt 12.6.0 (QEMU, version + domain counts, password-prompt auth); SSH portion now covered by the CI `libvirt-integration` job added in change `libvirt-pipeline-test` (archived 2026-08-18), verified via GitHub Actions run 2026-08-18
