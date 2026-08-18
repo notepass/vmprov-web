@@ -1,4 +1,4 @@
-.PHONY: build run test integrate integration-down
+.PHONY: build run test integrate integration-down libvirt-integrate
 
 build:
 	go build -o bin/server ./cmd/server
@@ -18,3 +18,6 @@ integrate:
 
 integration-down:
 	docker compose down
+
+libvirt-integrate:
+	LIBVIRT_INTEGRATION=1 go test ./internal/libvirt/... -count=1

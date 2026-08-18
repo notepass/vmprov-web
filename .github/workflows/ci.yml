@@ -33,6 +33,45 @@ jobs:
         if: always()
         run: docker compose down
 
+  libvirt-integration:
+    name: Libvirt integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+          cache: true
+      - name: Install libvirt and OpenSSH server
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvirt-daemon-system libvirt-clients libvirt-daemon-driver-qemu qemu-kvm openssh-server
+      - name: Start libvirtd and sshd
+        run: |
+          sudo systemctl enable --now libvirtd ssh
+          for i in $(seq 1 30); do
+            if systemctl is-active --quiet libvirtd && systemctl is-active --quiet ssh; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "libvirtd and ssh did not become active in time" >&2
+          systemctl status libvirtd ssh --no-pager >&2 || true
+          exit 1
+      - name: Grant the runner user libvirt group socket access
+        run: sudo usermod -aG libvirt "$(whoami)"
+      - name: Set up SSH fixtures
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519 -q
+          cat ~/.ssh/id_ed25519.pub >> ~/.ssh/authorized_keys
+          chmod 600 ~/.ssh/authorized_keys
+          ssh-keyscan 127.0.0.1 > ~/.ssh/libvirt_known_hosts
+      - name: Run libvirt integration tests
+        run: |
+          sg libvirt -c "LIBVIRT_INTEGRATION=1 LIBVIRT_SSH_KEY=$HOME/.ssh/id_ed25519 LIBVIRT_KNOWN_HOSTS=$HOME/.ssh/libvirt_known_hosts go test ./internal/libvirt/... -count=1 -v"
+
   build:
     name: Build binaries
     runs-on: ubuntu-latest
